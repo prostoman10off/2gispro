@@ -44,6 +44,12 @@
 
     .panel-title {
       font-size: 20px;
+      margin: 0 0 8px;
+    }
+
+    .panel-subtitle {
+      font-size: 14px;
+      color: #666;
       margin: 0 0 15px;
     }
 
@@ -255,6 +261,8 @@
 
       <div class="right-panel">
         <h2 class="panel-title">Выбранные рубрики</h2>
+        <div class="panel-subtitle">ID рубрики - Название</div>
+
         <div id="selectedList" class="selected-list">
           <div class="empty">Пока ничего не выбрано.</div>
         </div>
@@ -307,9 +315,9 @@
       groupedData = {};
 
       rows.forEach((row, index) => {
-        const level2 = (row[1] || '').toString().trim();   // B
-        const rubric = (row[2] || '').toString().trim();   // C
-        const code = (row[3] || '').toString().trim();     // D
+        const level2 = (row[1] || '').toString().trim();
+        const rubric = (row[2] || '').toString().trim();
+        const code = (row[3] || '').toString().trim();
 
         if (!level2 || !rubric) return;
 
