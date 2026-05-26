@@ -400,9 +400,7 @@
 
           const label = document.createElement('label');
           label.htmlFor = checkbox.id;
-          label.textContent = itemData.code
-            ? `${itemData.code} — ${itemData.rubric}`
-            : itemData.rubric;
+          label.textContent = itemData.rubric;
 
           item.appendChild(checkbox);
           item.appendChild(label);
