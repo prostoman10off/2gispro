@@ -26,22 +26,6 @@
       font-size: 32px;
     }
 
-    .top-panel {
-      margin-bottom: 20px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .file-info {
-      padding: 10px 14px;
-      background: #fff;
-      border-radius: 10px;
-      border: 1px solid #d9e0ea;
-      color: #444;
-    }
-
     .layout {
       display: grid;
       grid-template-columns: 1fr 380px;
@@ -61,6 +45,33 @@
     .panel-title {
       font-size: 20px;
       margin: 0 0 15px;
+    }
+
+    .counter-box {
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #f4f8ff;
+      border: 1px solid #d8e6ff;
+      color: #2f4f7f;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .limit-message {
+      display: none;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #fff1f1;
+      border: 1px solid #ffb8b8;
+      color: #d62828;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .limit-message.show {
+      display: block;
     }
 
     .category-block {
@@ -221,15 +232,17 @@
   <div class="page">
     <h1>Подбор рубрик</h1>
 
-    <div class="top-panel">
-      <div class="file-info">
-        Источник данных: <strong>rubrics.xlsx</strong>
-      </div>
-    </div>
-
     <div class="layout">
       <div class="left-panel">
-        <h2 class="panel-title">Рубрики 2-го уровня</h2>
+        <h2 class="panel-title">Выберите 10 рубрик из выпадающего списка</h2>
+
+        <div id="counterBox" class="counter-box">
+          Выбрано рубрик: 0
+        </div>
+
+        <div id="limitMessage" class="limit-message">
+          Свыше 10 оплачивается дополнительно
+        </div>
 
         <div class="search-box">
           <input type="text" id="searchInput" placeholder="Поиск по рубрикам..." />
@@ -281,6 +294,8 @@
         parseRows(rows);
         renderCategories(groupedData);
         renderSelected();
+        updateLimitMessage();
+        updateCounter();
       } catch (error) {
         console.error('Ошибка загрузки Excel:', error);
         document.getElementById('categoriesContainer').innerHTML =
@@ -366,6 +381,8 @@
             }
 
             renderSelected();
+            updateLimitMessage();
+            updateCounter();
           });
 
           const label = document.createElement('label');
@@ -398,7 +415,7 @@
 
         const text = document.createElement('div');
         text.className = 'selected-text';
-        text.innerHTML = `<strong>${escapeHtml(category)}</strong><br>${escapeHtml(sub)}`;
+        text.textContent = sub;
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'remove-btn';
@@ -407,12 +424,29 @@
         removeBtn.addEventListener('click', () => {
           selectedItems.delete(makeKey(category, sub));
           rerenderCurrent();
+          updateLimitMessage();
+          updateCounter();
         });
 
         item.appendChild(text);
         item.appendChild(removeBtn);
         selectedList.appendChild(item);
       });
+    }
+
+    function updateLimitMessage() {
+      const limitMessage = document.getElementById('limitMessage');
+
+      if (selectedItems.size >= 11) {
+        limitMessage.classList.add('show');
+      } else {
+        limitMessage.classList.remove('show');
+      }
+    }
+
+    function updateCounter() {
+      const counterBox = document.getElementById('counterBox');
+      counterBox.textContent = `Выбрано рубрик: ${selectedItems.size}`;
     }
 
     function rerenderCurrent() {
@@ -442,6 +476,8 @@
       }
 
       renderSelected();
+      updateLimitMessage();
+      updateCounter();
     }
 
     function makeKey(category, sub) {
@@ -462,6 +498,8 @@
     document.getElementById('clearBtn').addEventListener('click', () => {
       selectedItems.clear();
       rerenderCurrent();
+      updateLimitMessage();
+      updateCounter();
     });
 
     document.getElementById('copyBtn').addEventListener('click', async () => {
@@ -471,7 +509,7 @@
       }
 
       const text = Array.from(selectedItems.values())
-        .map(item => `${item.category} — ${item.sub}`)
+        .map(item => item.sub)
         .join('\n');
 
       try {
