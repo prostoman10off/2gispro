@@ -307,8 +307,9 @@
       groupedData = {};
 
       rows.forEach((row, index) => {
-        const level2 = (row[1] || '').toString().trim();
-        const rubric = (row[2] || '').toString().trim();
+        const level2 = (row[1] || '').toString().trim();   // B
+        const rubric = (row[2] || '').toString().trim();   // C
+        const code = (row[3] || '').toString().trim();     // D
 
         if (!level2 || !rubric) return;
 
@@ -316,7 +317,8 @@
           index === 0 &&
           (
             level2.toLowerCase().includes('рубр') ||
-            rubric.toLowerCase().includes('рубр')
+            rubric.toLowerCase().includes('рубр') ||
+            code.toLowerCase().includes('код')
           )
         ) {
           return;
@@ -326,8 +328,15 @@
           groupedData[level2] = [];
         }
 
-        if (!groupedData[level2].includes(rubric)) {
-          groupedData[level2].push(rubric);
+        const exists = groupedData[level2].some(item =>
+          item.rubric === rubric && item.code === code
+        );
+
+        if (!exists) {
+          groupedData[level2].push({
+            code,
+            rubric
+          });
         }
       });
     }
@@ -362,20 +371,24 @@
         const list = document.createElement('div');
         list.className = 'subcategory-list';
 
-        subcategories.forEach((sub, subIndex) => {
+        subcategories.forEach((itemData, subIndex) => {
           const item = document.createElement('div');
           item.className = 'subcategory-item';
 
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
           checkbox.id = `cb_${categoryIndex}_${subIndex}`;
-          checkbox.checked = selectedItems.has(makeKey(category, sub));
+          checkbox.checked = selectedItems.has(makeKey(category, itemData.code, itemData.rubric));
 
           checkbox.addEventListener('change', (e) => {
-            const key = makeKey(category, sub);
+            const key = makeKey(category, itemData.code, itemData.rubric);
 
             if (e.target.checked) {
-              selectedItems.set(key, { category, sub });
+              selectedItems.set(key, {
+                category,
+                code: itemData.code,
+                sub: itemData.rubric
+              });
             } else {
               selectedItems.delete(key);
             }
@@ -387,7 +400,9 @@
 
           const label = document.createElement('label');
           label.htmlFor = checkbox.id;
-          label.textContent = sub;
+          label.textContent = itemData.code
+            ? `${itemData.code} — ${itemData.rubric}`
+            : itemData.rubric;
 
           item.appendChild(checkbox);
           item.appendChild(label);
@@ -409,20 +424,20 @@
         return;
       }
 
-      Array.from(selectedItems.values()).forEach(({ category, sub }) => {
+      Array.from(selectedItems.values()).forEach(({ category, code, sub }) => {
         const item = document.createElement('div');
         item.className = 'selected-item';
 
         const text = document.createElement('div');
         text.className = 'selected-text';
-        text.textContent = sub;
+        text.textContent = code ? `${code} — ${sub}` : sub;
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'remove-btn';
         removeBtn.textContent = 'Удалить';
 
         removeBtn.addEventListener('click', () => {
-          selectedItems.delete(makeKey(category, sub));
+          selectedItems.delete(makeKey(category, code, sub));
           rerenderCurrent();
           updateLimitMessage();
           updateCounter();
@@ -457,14 +472,17 @@
       } else {
         const filtered = {};
 
-        Object.entries(groupedData).forEach(([category, subs]) => {
+        Object.entries(groupedData).forEach(([category, items]) => {
           const categoryMatch = category.toLowerCase().includes(query);
-          const subMatches = subs.filter(sub => sub.toLowerCase().includes(query));
+          const itemMatches = items.filter(item =>
+            item.rubric.toLowerCase().includes(query) ||
+            item.code.toLowerCase().includes(query)
+          );
 
           if (categoryMatch) {
-            filtered[category] = subs;
-          } else if (subMatches.length) {
-            filtered[category] = subMatches;
+            filtered[category] = items;
+          } else if (itemMatches.length) {
+            filtered[category] = itemMatches;
           }
         });
 
@@ -480,12 +498,12 @@
       updateCounter();
     }
 
-    function makeKey(category, sub) {
-      return `${category}|||${sub}`;
+    function makeKey(category, code, sub) {
+      return `${category}|||${code}|||${sub}`;
     }
 
     function escapeHtml(text) {
-      return text
+      return String(text)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -509,7 +527,7 @@
       }
 
       const text = Array.from(selectedItems.values())
-        .map(item => item.sub)
+        .map(item => item.code ? `${item.code} — ${item.sub}` : item.sub)
         .join('\n');
 
       try {
